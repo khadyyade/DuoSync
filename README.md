@@ -15,7 +15,7 @@ It is designed especially for users with a dual-boot setup (Linux ↔ Windows), 
 
 ## Usage
 
-Currently, you can run the script with predefined paths by editing the variables at the bottom of `duosync.py`:
+For the moment, you can run the script with predefined paths by editing the variables at the bottom of `duosync.py`:
 
 ```bash
 python3 duosync.py
