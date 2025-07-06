@@ -31,8 +31,20 @@ def sync_dirs(src_path, dst_path):
             relative_path = src_file.relative_to(src)
             dst_file = dst /relative_path
 
-            #If the file doesn't exist in the destination path or the file in the source path has been modified
-            if not dst_file.exists() or src_file.stat().st_mtime > dst_file.stat().st_mtime:
+            needs_sync = False
+            #If the file doesn't exist in the destination path
+            if not dst_file.exists():
+                needs_sync = True
+            else:
+                #Only if the file sizes are the same, we verify their hashes
+                if src_file.stat().st_size != dst_file.stat().st_size:
+                    needs_copy = True
+                else:
+                    src_hash = get_file_hash(src_file)
+                    dst_hash = get_file_hash(dst_file)
+                    if src_hash != dst_hash:
+                        needs_sync = True
+            if needs_sync:
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst_file)
                 print(f"Copied {src_file} to {dst_file}")
