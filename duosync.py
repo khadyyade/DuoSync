@@ -11,6 +11,24 @@ def get_file_hash(file_path):
             file_hash.update(block) #For every block, we update the hash number
     return file_hash.hexdigest()
 
+def is_mounted(partition_path): #Function for verifying if the path is mounted
+    return os.path.ismount(partition_path)
+
+def mount_partition(device, partition_path):
+    print(f"Attempting to mount {device} on {partition_path}...")
+
+    try:
+        os.makedirs(partition_path, exist_ok=True)
+        result = os.system(f"sudo mount {device} {partition_path}")
+
+        if result != 0:
+            print("❌ Failed to mount partition. You may need to shut down Windows completely or disable Fast Startup.")
+            return False
+        return True
+    except Exception as e:
+        print(f"❌ Error while trying to mount: {e}")
+        return False
+
 def sync_dirs(src_path, dst_path, dry_run=False):
     src = Path(src_path)
     dst = Path(dst_path)
@@ -77,7 +95,7 @@ def sync_dirs(src_path, dst_path, dry_run=False):
             if not src_file.exists():
                 if not dry_run:
                     try:
-                        dst_file.unlink()  # Elimina el archivo
+                        dst_file.unlink()  #Deletes the file
                         print(f"Deleted {dst_file} (no longer exists in source)")
                         files_deleted += 1
                     except Exception as e:
@@ -105,53 +123,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    if args.destination.startswith("/mnt/windows") and not is_mounted("/mnt/windows"):
+        mounted=mount_partition("/dev/nvme0n1p3", "/mnt/windows")
+        if not mounted:
+            print("Failed to mount Windows partition. Exiting.")
+            exit(1)
+
     sync_dirs(args.source, args.destination, args.dry_run)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
