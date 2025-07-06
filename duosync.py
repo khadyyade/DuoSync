@@ -8,7 +8,7 @@ def get_file_hash(file_path):
     file_hash = hashlib.md5() #MD5 is an algorithm that generates a unique 128-bit hash number (32 hexadecimal characters) for any data
     with open(file_path, "rb") as f:#MD5 only works with bytes, not with text
         for block in iter(lambda: f.read(4096), b""): #It reads the file in 4KB blocks until there is nothing left to read
-            file_hash.update(block) #For every chunk, we update the hash number
+            file_hash.update(block) #For every block, we update the hash number
     return file_hash.hexdigest()
 
 def sync_dirs(src_path, dst_path):
