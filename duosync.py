@@ -23,7 +23,11 @@ def sync_dirs(src_path, dst_path, dry_run=False):
            print("The destination directory does not exist." +
                  " Would create the new folder..." if dry_run else " Creating the new folder...")
            if not dry_run:
-               dst.mkdir(parents=True, exist_ok=True)
+               try:
+                   dst.mkdir(parents=True, exist_ok=True)
+               except Exception as e:
+                   print(f"Failed to create the destination folder: {e}")
+                   return
     #COPY
     files_copied = 0
     dry_files_copied = 0
@@ -49,10 +53,13 @@ def sync_dirs(src_path, dst_path, dry_run=False):
                         needs_copy = True
             if needs_copy:
                 if not dry_run:
-                    dst_file.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src_file, dst_file)
-                    print(f"Copied {src_file} to {dst_file}")
-                    files_copied += 1
+                    try:
+                        dst_file.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src_file, dst_file)
+                        print(f"Copied {src_file} to {dst_file}")
+                        files_copied += 1
+                    except Exception as e:
+                        print(f"❌ Failed to copy {relative_path}: {e}")
                 else:
                     print(f"Would copy {src_file} to {dst_file}")
                     dry_files_copied += 1
@@ -69,9 +76,12 @@ def sync_dirs(src_path, dst_path, dry_run=False):
 
             if not src_file.exists():
                 if not dry_run:
-                    dst_file.unlink()  # Elimina el archivo
-                    print(f"Deleted {dst_file} (no longer exists in source)")
-                    files_deleted += 1
+                    try:
+                        dst_file.unlink()  # Elimina el archivo
+                        print(f"Deleted {dst_file} (no longer exists in source)")
+                        files_deleted += 1
+                    except Exception as e:
+                        print(f"Failed to delete {relative_path}: {e}")
                 else:
                     print(f"Would delete {dst_file} (no longer exists in source)")
                     dry_files_deleted += 1
