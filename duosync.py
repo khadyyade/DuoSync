@@ -20,8 +20,8 @@ def sync_dirs(src_path, dst_path):
        return
     else:
        if not dst.exists():
-           print("The destination directory does not exist")
-           return
+           print("The destination directory does not exist. Creating the new folder...")
+           dst.mkdir(parents=True, exist_ok=True)
 
     files_copied = 0
 
