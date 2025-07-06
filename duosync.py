@@ -11,7 +11,7 @@ def get_file_hash(file_path):
             file_hash.update(block) #For every block, we update the hash number
     return file_hash.hexdigest()
 
-def sync_dirs(src_path, dst_path):
+def sync_dirs(src_path, dst_path, dry_run=False):
     src = Path(src_path)
     dst = Path(dst_path)
 
@@ -20,11 +20,13 @@ def sync_dirs(src_path, dst_path):
        return
     else:
        if not dst.exists():
-           print("The destination directory does not exist. Creating the new folder...")
-           dst.mkdir(parents=True, exist_ok=True)
-
+           print("The destination directory does not exist." +
+                 " Would create the new folder..." if dry_run else " Creating the new folder...")
+           if not dry_run:
+               dst.mkdir(parents=True, exist_ok=True)
     #COPY
     files_copied = 0
+    dry_files_copied = 0
 
     for dir_path, _, filenames in os.walk(src):
         for file in filenames:
@@ -46,16 +48,18 @@ def sync_dirs(src_path, dst_path):
                     if src_hash != dst_hash:
                         needs_copy = True
             if needs_copy:
-                dst_file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_file, dst_file)
-                print(f"Copied {src_file} to {dst_file}")
-                files_copied += 1
-
-    if files_copied == 0:
-        print("All files are up to date.")
+                if not dry_run:
+                    dst_file.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src_file, dst_file)
+                    print(f"Copied {src_file} to {dst_file}")
+                    files_copied += 1
+                else:
+                    print(f"Would copy {src_file} to {dst_file}")
+                    dry_files_copied += 1
 
     #DELETE
     files_deleted = 0
+    dry_files_deleted = 0
 
     for dir_path, _, filenames in os.walk(dst):
         for file in filenames:
@@ -64,21 +68,34 @@ def sync_dirs(src_path, dst_path):
             src_file = src / relative_path
 
             if not src_file.exists():
-                dst_file.unlink()  # Elimina el archivo
-                print(f"Deleted {dst_file} (no longer exists in source)")
-                files_deleted += 1
+                if not dry_run:
+                    dst_file.unlink()  # Elimina el archivo
+                    print(f"Deleted {dst_file} (no longer exists in source)")
+                    files_deleted += 1
+                else:
+                    print(f"Would delete {dst_file} (no longer exists in source)")
+                    dry_files_deleted += 1
 
-    print(f"Sync complete: {files_copied} file(s) copied, {files_deleted} deleted.")
+    if files_copied == 0 and files_deleted == 0 and not dry_run:
+        print("All files are up to date.")
+
+    action = "Would " if dry_run else ""
+    copied = files_copied if not dry_run else dry_files_copied
+    deleted = files_deleted if not dry_run else dry_files_deleted
+    print(f"Sync {'simulation' if dry_run else 'complete'}: "
+          f"{action}copy {copied} file(s), {action}delete {deleted} file(s).")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="DuoSync - Synchronize two folders by copying new or modified files."
     )
     parser.add_argument("source", help="Path to the source folder")
     parser.add_argument("destination", help="Path to the destination folder")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate the sync without actually copying or deleting files")
 
     args = parser.parse_args()
 
-    sync_dirs(args.source, args.destination)
+    sync_dirs(args.source, args.destination, args.dry_run)
 
 
 
