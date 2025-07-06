@@ -23,6 +23,7 @@ def sync_dirs(src_path, dst_path):
            print("The destination directory does not exist. Creating the new folder...")
            dst.mkdir(parents=True, exist_ok=True)
 
+    #COPY
     files_copied = 0
 
     for dir_path, _, filenames in os.walk(src):
@@ -31,10 +32,10 @@ def sync_dirs(src_path, dst_path):
             relative_path = src_file.relative_to(src)
             dst_file = dst /relative_path
 
-            needs_sync = False
+            needs_copy = False
             #If the file doesn't exist in the destination path
             if not dst_file.exists():
-                needs_sync = True
+                needs_copy = True
             else:
                 #Only if the file sizes are the same, we verify their hashes
                 if src_file.stat().st_size != dst_file.stat().st_size:
@@ -43,8 +44,8 @@ def sync_dirs(src_path, dst_path):
                     src_hash = get_file_hash(src_file)
                     dst_hash = get_file_hash(dst_file)
                     if src_hash != dst_hash:
-                        needs_sync = True
-            if needs_sync:
+                        needs_copy = True
+            if needs_copy:
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst_file)
                 print(f"Copied {src_file} to {dst_file}")
@@ -53,6 +54,21 @@ def sync_dirs(src_path, dst_path):
     if files_copied == 0:
         print("All files are up to date.")
 
+    #DELETE
+    files_deleted = 0
+
+    for dir_path, _, filenames in os.walk(dst):
+        for file in filenames:
+            dst_file = Path(dir_path) / file
+            relative_path = dst_file.relative_to(dst)
+            src_file = src / relative_path
+
+            if not src_file.exists():
+                dst_file.unlink()  # Elimina el archivo
+                print(f"Deleted {dst_file} (no longer exists in source)")
+                files_deleted += 1
+
+    print(f"Sync complete: {files_copied} file(s) copied, {files_deleted} deleted.")
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="DuoSync - Synchronize two folders by copying new or modified files."
